@@ -21,7 +21,12 @@ pub fn run() {
         process::exit(1);
     });
 
-    let result = searching::search(&config.query, &content);
+    let result = if config.case_insensitive {
+        searching::search_case_insensitive(&config.query, &content)
+    }
+    else {
+        searching::search(&config.query, &content)
+    };
 
     for line in result {
         println!("{line}");
