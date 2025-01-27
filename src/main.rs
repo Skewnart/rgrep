@@ -1,3 +1,6 @@
+
 fn main() {
-    println!("Hello, world!");
+    rgrep::run();
+
+    let i = 32;
 }
