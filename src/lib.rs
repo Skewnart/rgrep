@@ -12,12 +12,12 @@ pub fn run() {
     // dbg!(&args);
 
     let config = Config::build(&args).unwrap_or_else(|err| {
-        println!("{err}");
+        eprintln!("{err}");
         process::exit(1);
     });
 
     let content = readfile(&config).unwrap_or_else(|err| {
-        println!("Application error : {}", err);
+        eprintln!("Application error : {}", err);
         process::exit(1);
     });
 
