@@ -1,25 +1,15 @@
-use std::{env, fs, io, process};
 
 mod config;
 mod searching;
 
+use std::{env, error::Error, fs, io};
 use config::Config;
 
-
-pub fn run() {
+pub fn run() -> Result<(), Box<dyn Error>> {
     let args: Vec<String> = env::args().collect();
 
-    // dbg!(&args);
-
-    let config = Config::build(&args).unwrap_or_else(|err| {
-        eprintln!("{err}");
-        process::exit(1);
-    });
-
-    let content = readfile(&config).unwrap_or_else(|err| {
-        eprintln!("Application error : {}", err);
-        process::exit(1);
-    });
+    let config = Config::build(&args)?;
+    let content = readfile(&config)?;
 
     let result = if config.case_insensitive {
         searching::search_case_insensitive(&config.query, &content)
@@ -31,6 +21,8 @@ pub fn run() {
     for line in result {
         println!("{line}");
     }
+
+    Ok(())
 }
 
 fn readfile(config: &Config) -> Result<String, io::Error> {

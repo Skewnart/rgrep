@@ -1,4 +1,8 @@
+use std::process;
 
 fn main() {
-    rgrep::run();
+    if let Err(err) = rgrep::run(){
+        eprintln!("{err}");
+        process::exit(1);
+    }
 }
