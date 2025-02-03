@@ -9,6 +9,8 @@ pub fn run() -> Result<(), Box<dyn Error>> {
     let args: Vec<String> = env::args().collect();
 
     let config = Config::build(&args)?;
+    dbg!(&config);
+    
     let content = readfile(&config)?;
 
     let result = if config.case_insensitive {

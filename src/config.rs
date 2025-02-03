@@ -1,27 +1,52 @@
-use std::env;
+use std::{env, io::{self, BufRead, IsTerminal}};
 
+#[derive(Debug)]
 pub struct Config {
     pub query: String,
     pub filepath: String,
+    pub content: String,
     pub case_insensitive: bool
 }
 
 impl Config {
 
-    pub fn build(configs : &[String]) -> Result<Self, &str> {
+    pub fn build(args : &[String]) -> Result<Self, &str> {
 
-        if configs.len() <= 2 || configs.len() > 4 { 
-            return Err("needs 2 or 3 arguments");
+        if args.len() < 2 {
+            return Err("Query not provided");
         }
 
-        let mut case_insensitive = env::var("CASE_INSENSITIVE").is_ok();
-        if configs.len() == 4 && configs[3] == "-i" {
-            case_insensitive = true;
+        let _query = args[1].clone();
+
+        let _from_pipe = !io::stdin().is_terminal();
+
+        let (_filepath, _content) = if _from_pipe {
+            (
+                String::from(""), 
+                io::stdin().lock().lines().fold(String::from(""), |acc, line| acc + &line.unwrap() + "\n")
+            )
         }
-        
-        let query = configs[1].clone();
-        let filepath  = configs[2].clone();
+        else{
+            if args.len() < 3 {
+                return Err("File not provided");
+            }
+            
+            (
+                args[2].clone(),
+                String::from("")
+            )
+        };
+
+        let mut _case_insensitive = env::var("CASE_INSENSITIVE").is_ok();
+        if args.iter().any(|config| config == "-i") {
+            _case_insensitive = true;
+        }
     
-        Ok(Self { query, filepath, case_insensitive })
+        Ok(Self { 
+            query : _query,
+            filepath : _filepath,
+            content : _content,
+            case_insensitive : _case_insensitive
+        })
     }
 }
