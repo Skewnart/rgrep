@@ -1,4 +1,4 @@
-use std::{env, io::{self, BufRead, IsTerminal}};
+use std::{env::{self}, io::{self, BufRead, IsTerminal}};
 
 #[derive(Debug)]
 pub struct Config {
@@ -10,13 +10,12 @@ pub struct Config {
 
 impl Config {
 
-    pub fn build(args : &[String]) -> Result<Self, &str> {
+    pub fn build<'a>(mut args : impl Iterator<Item = String>) -> Result<Self, &'a str> {
+        args.next();
 
-        if args.len() < 2 {
+        let Some(_query) = args.next() else {
             return Err("Query not provided");
-        }
-
-        let _query = args[1].clone();
+        };
 
         let _from_pipe = !io::stdin().is_terminal();
 
@@ -26,20 +25,24 @@ impl Config {
                 io::stdin().lock().lines().fold(String::from(""), |acc, line| acc + &line.unwrap() + "\n")
             )
         }
-        else{
-            if args.len() < 3 {
-                return Err("File not provided");
-            }
-            
+        else{            
             (
-                args[2].clone(),
+                if let Some(_filepath) = args.next() {
+                    _filepath
+                } else { 
+                    return Err("File not provided");
+                },
                 String::from("")
             )
         };
 
         let mut _case_insensitive = env::var("CASE_INSENSITIVE").is_ok();
-        if args.iter().any(|config| config == "-i") {
-            _case_insensitive = true;
+
+        while let Some(arg) = args.next() {
+            match arg.as_str() {
+                "-i" => { _case_insensitive = true; },
+                _ => ()
+            }
         }
     
         Ok(Self { 

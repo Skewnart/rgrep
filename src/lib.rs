@@ -2,14 +2,13 @@
 mod config;
 mod searching;
 
-use std::{env, error::Error, fs, io};
+use std::{env::{self, Args}, error::Error, fs, io};
 use config::Config;
 
 pub fn run() -> Result<(), Box<dyn Error>> {
-    let args: Vec<String> = env::args().collect();
+    let args: Args = env::args();
 
-    let config = Config::build(&args)?;
-    dbg!(&config);
+    let config = Config::build(args)?;
     
     let content = readfile(&config)?;
 
