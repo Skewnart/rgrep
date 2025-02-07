@@ -1,10 +1,8 @@
 use std::{env::{self}, io::{self, BufRead, IsTerminal}};
 
-#[derive(Debug)]
 pub struct Config {
     pub query: String,
-    pub filepath: Option<String>,
-    pub content: Option<String>,
+    pub input: Input,
     pub case_insensitive: bool
 }
 
@@ -19,21 +17,13 @@ impl Config {
 
         let _from_pipe = !io::stdin().is_terminal();
 
-        let (_filepath, _content) = if _from_pipe {
-            (
-                None, 
-                Some(io::stdin().lock().lines().fold(String::from(""), |acc, line| acc + &line.unwrap() + "\n"))
-            )
+        let _input = if _from_pipe {
+            Input::Content(io::stdin().lock().lines().fold(String::from(""), |acc, line| acc + &line.unwrap() + "\n"))
         }
-        else{            
-            (
-                if let Some(_filepath) = args.next() {
-                    Some(_filepath)
-                } else { 
-                    return Err("File not provided");
-                },
-                None
-            )
+        else if let Some(_filepath) = args.next() {
+            Input::Filepath(_filepath)
+        } else { 
+            return Err("File not provided");
         };
 
         let mut _case_insensitive = env::var("CASE_INSENSITIVE").is_ok();
@@ -47,9 +37,13 @@ impl Config {
     
         Ok(Self { 
             query : _query,
-            filepath : _filepath,
-            content : _content,
+            input: _input,
             case_insensitive : _case_insensitive
         })
     }
+}
+
+pub enum Input {
+    Filepath(String),
+    Content(String)
 }

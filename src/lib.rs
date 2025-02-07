@@ -3,17 +3,16 @@ mod config;
 mod searching;
 
 use std::{env::{self, Args}, error::Error, fs, io};
-use config::Config;
+use config::{Config, Input};
 
 pub fn run() -> Result<(), Box<dyn Error>> {
     let args: Args = env::args();
 
     let config = Config::build(args)?;
     
-    let content = if config.content.is_some() {
-        config.content.unwrap() //soon removed
-    } else {
-        readfile(config.filepath.unwrap_or("".to_string()))?
+    let content = match config.input {
+        Input::Content(_content) => _content,
+        Input::Filepath(_filepath) => readfile(_filepath)?
     };
 
     let result = if config.case_insensitive {
