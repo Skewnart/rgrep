@@ -3,8 +3,8 @@ use std::{env::{self}, io::{self, BufRead, IsTerminal}};
 #[derive(Debug)]
 pub struct Config {
     pub query: String,
-    pub filepath: String,
-    pub content: String,
+    pub filepath: Option<String>,
+    pub content: Option<String>,
     pub case_insensitive: bool
 }
 
@@ -21,18 +21,18 @@ impl Config {
 
         let (_filepath, _content) = if _from_pipe {
             (
-                String::from(""), 
-                io::stdin().lock().lines().fold(String::from(""), |acc, line| acc + &line.unwrap() + "\n")
+                None, 
+                Some(io::stdin().lock().lines().fold(String::from(""), |acc, line| acc + &line.unwrap() + "\n"))
             )
         }
         else{            
             (
                 if let Some(_filepath) = args.next() {
-                    _filepath
+                    Some(_filepath)
                 } else { 
                     return Err("File not provided");
                 },
-                String::from("")
+                None
             )
         };
 

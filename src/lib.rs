@@ -10,7 +10,11 @@ pub fn run() -> Result<(), Box<dyn Error>> {
 
     let config = Config::build(args)?;
     
-    let content = readfile(&config)?;
+    let content = if config.content.is_some() {
+        config.content.unwrap() //soon removed
+    } else {
+        readfile(config.filepath.unwrap_or("".to_string()))?
+    };
 
     let result = if config.case_insensitive {
         searching::search_case_insensitive(&config.query, &content)
@@ -26,6 +30,6 @@ pub fn run() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-fn readfile(config: &Config) -> Result<String, io::Error> {
-    fs::read_to_string(config.filepath.clone())
+fn readfile(_filepath: String) -> Result<String, io::Error> {
+    fs::read_to_string(_filepath)
 }
