@@ -1,28 +1,25 @@
 
 mod config;
-mod searching;
+mod search;
 
 use std::{env::{self, Args}, error::Error, fs, io};
 use config::{Config, Input};
+use search::Search;
 
 pub fn run() -> Result<(), Box<dyn Error>> {
     let args: Args = env::args();
 
     let config = Config::build(args)?;
     
-    let content = match config.input {
-        Input::Content(_content) => _content,
-        Input::Filepath(_filepath) => readfile(_filepath)?
+    let content: String = match &config.input {
+        Input::Content(_content) => _content.clone(),
+        Input::Filepath(_filepath) => readfile(_filepath.clone())?
     };
 
-    let result = if config.case_insensitive {
-        searching::search_case_insensitive(&config.query, &content)
-    }
-    else {
-        searching::search(&config.query, &content)
-    };
+    let search = Search::build(&config);
+    let lines = search.search(&config.query, &content);
 
-    for line in result {
+    for line in lines {
         println!("{line}");
     }
 
