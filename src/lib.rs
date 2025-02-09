@@ -2,22 +2,22 @@
 mod config;
 mod search;
 
-use std::{env::{self, Args}, error::Error, fs, io};
+use std::{env, error::Error, fs, io};
 use config::{Config, Input};
 use search::Search;
 
 pub fn run() -> Result<(), Box<dyn Error>> {
-    let args: Args = env::args();
+    let args = env::args();
 
     let config = Config::build(args)?;
     
-    let content: String = match &config.input {
-        Input::Content(_content) => _content.clone(),
-        Input::Filepath(_filepath) => readfile(_filepath.clone())?
+    let content: &String = match &config.input {
+        Input::Content(_content) => _content,
+        Input::Filepath(_filepath) => &readfile(_filepath)?
     };
 
     let search = Search::build(&config);
-    let lines = search.search(&config.query, &content);
+    let lines = search.search(&config.query, content);
 
     for line in lines {
         println!("{line}");
@@ -26,6 +26,6 @@ pub fn run() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-fn readfile(_filepath: String) -> Result<String, io::Error> {
+fn readfile(_filepath: &String) -> Result<String, io::Error> {
     fs::read_to_string(_filepath)
 }
