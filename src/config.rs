@@ -47,3 +47,60 @@ impl Config {
         })
     }
 }
+
+
+#[cfg(test)]
+mod tests {
+
+    use std::vec::IntoIter;
+
+    use super::*;
+
+    fn extract_query_into_iter(input: &str) -> IntoIter<String> {
+        input.split_whitespace().map(String::from).collect::<Vec<String>>().into_iter()
+    }
+
+    #[test]
+    fn check_bad_format() {
+        let args= extract_query_into_iter("program.exe");
+        let config = Config::build(args);
+        
+        assert!(config.is_err());
+
+        let args= extract_query_into_iter("program.exe query");
+        let config = Config::build(args);
+        
+        assert!(config.is_err());
+    }
+
+    #[test]
+    fn check_query_file() {
+        let args= extract_query_into_iter("program.exe query file");
+        let config = Config::build(args);
+        
+        assert!(config.is_ok());
+        let config = config.expect("Result should be ok.");
+
+        assert_eq!(config.query, "query");
+        assert!(matches!(config.input, Input::Filepath(_)));
+    }
+
+    #[test]
+    fn check_insensitive() {
+        let args= extract_query_into_iter("program.exe query file -i");
+        let config = Config::build(args);
+        
+        assert!(config.is_ok());
+        let config = config.expect("Result should be ok.");
+
+        assert!(config.case_insensitive);
+        
+        let args= extract_query_into_iter("program.exe query file");
+        let config = Config::build(args);
+        
+        assert!(config.is_ok());
+        let config = config.expect("Result should be ok.");
+
+        assert!(!config.case_insensitive);    
+    }
+}
