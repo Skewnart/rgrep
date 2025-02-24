@@ -6,7 +6,7 @@ use std::{env, error::Error, fs, io};
 use config::{Config, Input};
 use search::Search;
 
-pub fn run() -> Result<(), Box<dyn Error>> {
+pub fn run() -> Result<(), Box<dyn Error>> {    
     let args = env::args();
 
     let config = Config::build(args)?;
