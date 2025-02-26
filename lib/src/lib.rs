@@ -1,15 +1,17 @@
 
 mod config;
 mod search;
+mod stdin;
 
 use std::{env, error::Error, fs, io};
 use config::{Config, Input};
 use search::Search;
+use stdin::StdinService;
 
 pub fn run() -> Result<(), Box<dyn Error>> {    
     let args = env::args();
 
-    let config = Config::build(args)?;
+    let config = Config::build(StdinService::new(), args)?;
     
     let content: &String = match &config.input {
         Input::Content(_content) => _content,
