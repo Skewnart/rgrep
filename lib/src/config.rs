@@ -25,6 +25,7 @@ impl Config {
         let _from_pipe = !io::stdin().is_terminal();
         
         println!("is_terminal : {}", io::stdin().is_terminal());
+        println!("atty : {}", atty::is(atty::Stream::Stdin));
 
         let _input = if _from_pipe {
             Input::Content(io::stdin().lock().lines().fold(String::from(""), |acc, line| acc + &line.unwrap() + "\n"))
