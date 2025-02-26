@@ -8,9 +8,7 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-
-  setup:
-    name: setup
+  build_and_test:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -18,26 +16,13 @@ jobs:
           - stable
 #          - beta
 #          - nightly
-    steps:
-      - uses: actions/checkout@v4
-      - run: rustup update ${{ matrix.toolchain }} && rustup default ${{ matrix.toolchain }}
 
-  build:
-    name: build
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        toolchain:
-          - stable
     steps:
-      - run: cargo build --verbose
-
-  test:
-    name: test
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        toolchain:
-          - stable
-    steps:
-      - run: cargo test --verbose
+      - name: checkout
+        uses: actions/checkout@v4
+      - name: setup
+        run: rustup update ${{ matrix.toolchain }} && rustup default ${{ matrix.toolchain }}
+      - name: build
+        run: cargo build --verbose
+      - name: test
+        run: cargo test --verbose
