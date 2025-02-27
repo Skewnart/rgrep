@@ -1,13 +1,11 @@
 use std::{env::{self}, io::{self, BufRead}};
 use crate::stdin::Terminal;
 
-#[derive(Debug)]
 pub enum Input {
     Filepath(String),
     Content(String)
 }
 
-#[derive(Debug)]
 pub struct Config {
     pub query: String,
     pub input: Input,
@@ -84,8 +82,6 @@ mod tests {
 
         let args= extract_query_into_iter("program.exe query");
         let config = Config::build(StdinServiceMock::new(), args);
-
-        println!("{:?}", config);
         
         assert!(config.is_err());
     }
@@ -94,8 +90,6 @@ mod tests {
     fn check_query_file() {
         let args= extract_query_into_iter("program.exe query file");
         let config = Config::build(StdinServiceMock::new(), args);        
-
-        println!("{:?}", config);
         
         assert!(config.is_ok());
         let config = config.expect("Result should be ok.");
