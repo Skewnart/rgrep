@@ -15,3 +15,12 @@ impl Terminal for StdinService {
         io::stdin().is_terminal()
     }
 }
+
+pub struct StdinServiceMock{
+    pub is_terminal: bool
+}
+impl Terminal for StdinServiceMock {
+    fn is_terminal(&self) -> bool {
+        self.is_terminal
+    }
+}

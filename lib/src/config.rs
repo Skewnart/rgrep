@@ -54,20 +54,9 @@ impl Config {
 mod tests {
 
     use std::vec::IntoIter;
+    use crate::stdin::StdinServiceMock;
 
     use super::*;
-
-    pub struct StdinServiceMock;
-    impl StdinServiceMock {
-        pub fn new() -> Self {
-            Self {}
-        }
-    }
-    impl Terminal for StdinServiceMock {
-        fn is_terminal(&self) -> bool {
-            true
-        }
-    }
 
     fn extract_query_into_iter(input: &str) -> IntoIter<String> {
         input.split_whitespace().map(String::from).collect::<Vec<String>>().into_iter()
@@ -76,12 +65,12 @@ mod tests {
     #[test]
     fn check_bad_format() {
         let args= extract_query_into_iter("program.exe");
-        let config = Config::build(StdinServiceMock::new(), args);
+        let config = Config::build(StdinServiceMock { is_terminal: true }, args);
         
         assert!(config.is_err());
 
         let args= extract_query_into_iter("program.exe query");
-        let config = Config::build(StdinServiceMock::new(), args);
+        let config = Config::build(StdinServiceMock { is_terminal: true }, args);
         
         assert!(config.is_err());
     }
@@ -89,7 +78,7 @@ mod tests {
     #[test]
     fn check_query_file() {
         let args= extract_query_into_iter("program.exe query file");
-        let config = Config::build(StdinServiceMock::new(), args);        
+        let config = Config::build(StdinServiceMock { is_terminal: true }, args);        
         
         assert!(config.is_ok());
         let config = config.expect("Result should be ok.");
@@ -101,7 +90,7 @@ mod tests {
     #[test]
     fn check_insensitive() {
         let args= extract_query_into_iter("program.exe query file -i");
-        let config = Config::build(StdinServiceMock::new(), args);
+        let config = Config::build(StdinServiceMock { is_terminal: true }, args);
         
         assert!(config.is_ok());
         let config = config.expect("Result should be ok.");
@@ -109,7 +98,7 @@ mod tests {
         assert!(config.case_insensitive);
         
         let args= extract_query_into_iter("program.exe query file");
-        let config = Config::build(StdinServiceMock::new(), args);
+        let config = Config::build(StdinServiceMock { is_terminal: true }, args);
         
         assert!(config.is_ok());
         let config = config.expect("Result should be ok.");
