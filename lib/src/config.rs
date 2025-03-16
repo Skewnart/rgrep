@@ -1,5 +1,5 @@
-use std::{env::{self}, fs::OpenOptions, io::{self, BufRead}};
-use args_extractor::Terminal;
+use std::env;
+use args_extractor::Prompt;
 
 pub enum Input {
     Filepath(String),
@@ -14,30 +14,33 @@ pub struct Config {
 
 impl Config {
 
-    pub fn build(_terminal_service : impl Terminal, mut args : impl Iterator<Item = String>) -> Result<Self, String> {
-        args.next();
+    pub fn build(prompt: Prompt) -> Result<Self, String> {
 
-        let Some(_query) = args.next() else {
+        let Some(_args) = prompt.arguments else {
             return Err("Query not provided".to_string());
         };
 
-        let _from_pipe = !_terminal_service.is_terminal();
+        let _query = _args[0].clone();
 
-        let _input = if _from_pipe {
-            Input::Content(io::stdin().lock().lines().fold(String::from(""), |acc, line| acc + &line.unwrap() + "\n"))
-        }
-        else if let Some(_filepath) = args.next() {
-            Input::Filepath(_filepath)
-        } else { 
-            return Err("File not provided".to_string());
+        let _input = 
+        match prompt.content_piped {
+            Some(content) => Input::Content(content),
+            None => {
+                match _args.get(1) {
+                    Some(arg) => Input::Filepath(arg.clone()),
+                    None => return Err("File not provided".to_string())
+                }
+            }
         };
 
         let mut _case_insensitive = env::var("CASE_INSENSITIVE").is_ok();
 
-        while let Some(arg) = args.next() {
-            match arg.as_str() {
-                "-i" => { _case_insensitive = true; },
-                _ => ()
+        if let Some(params) = prompt.parameters {
+            for (key, _) in params {
+                match key.as_str() {
+                    "-i" => { _case_insensitive = true; },
+                    _ => ()
+                }
             }
         }
     
@@ -64,12 +67,19 @@ mod tests {
     #[test]
     fn check_bad_format() {
         let args= extract_query_into_iter("program.exe");
-        let config = Config::build(StdinServiceMock { is_terminal: true }, args);
+        let prompt = PromptExtractor::new(StdinServiceMock { is_terminal: true })
+            .extract(args)
+            .expect("Prompt should be ok");
+        let config = Config::build(prompt);
         
         assert!(config.is_err());
 
         let args= extract_query_into_iter("program.exe query");
-        let config = Config::build(StdinServiceMock { is_terminal: true }, args);
+        let prompt = PromptExtractor::new(StdinServiceMock { is_terminal: true })
+            .extract(args)
+            .expect("Prompt should be ok");
+
+        let config = Config::build(prompt);
         
         assert!(config.is_err());
     }
@@ -77,7 +87,11 @@ mod tests {
     #[test]
     fn check_query_file() {
         let args= extract_query_into_iter("program.exe query file");
-        let config = Config::build(StdinServiceMock { is_terminal: true }, args);        
+        let prompt = PromptExtractor::new(StdinServiceMock { is_terminal: true })
+            .extract(args)
+            .expect("Prompt should be ok");
+
+        let config = Config::build(prompt);        
         
         assert!(config.is_ok());
         let config = config.expect("Result should be ok.");
@@ -89,7 +103,11 @@ mod tests {
     #[test]
     fn check_insensitive() {
         let args= extract_query_into_iter("program.exe query file -i");
-        let config = Config::build(StdinServiceMock { is_terminal: true }, args);
+        let prompt = PromptExtractor::new(StdinServiceMock { is_terminal: true })
+            .extract(args)
+            .expect("Prompt should be ok");
+
+        let config = Config::build(prompt);   
         
         assert!(config.is_ok());
         let config = config.expect("Result should be ok.");
@@ -97,7 +115,11 @@ mod tests {
         assert!(config.case_insensitive);
         
         let args= extract_query_into_iter("program.exe query file");
-        let config = Config::build(StdinServiceMock { is_terminal: true }, args);
+        let prompt = PromptExtractor::new(StdinServiceMock { is_terminal: true })
+            .extract(args)
+            .expect("Prompt should be ok");
+
+        let config = Config::build(prompt);   
         
         assert!(config.is_ok());
         let config = config.expect("Result should be ok.");
