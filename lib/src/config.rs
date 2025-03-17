@@ -56,7 +56,8 @@ impl Config {
 mod tests {
 
     use std::vec::IntoIter;
-    use args_extractor::{PromptExtractor, StdinServiceMock};
+
+    use args_extractor::PromptService;
 
     use super::*;
 
@@ -67,17 +68,14 @@ mod tests {
     #[test]
     fn check_bad_format() {
         let args= extract_query_into_iter("program.exe");
-        let prompt = PromptExtractor::new(StdinServiceMock { is_terminal: true })
-            .extract(args)
-            .expect("Prompt should be ok");
+        let prompt = PromptService::get_with_args(args).expect("Prompt should be ok");
+
         let config = Config::build(prompt);
         
         assert!(config.is_err());
 
         let args= extract_query_into_iter("program.exe query");
-        let prompt = PromptExtractor::new(StdinServiceMock { is_terminal: true })
-            .extract(args)
-            .expect("Prompt should be ok");
+        let prompt = PromptService::get_with_args(args).expect("Prompt should be ok");
 
         let config = Config::build(prompt);
         
@@ -87,14 +85,12 @@ mod tests {
     #[test]
     fn check_query_file() {
         let args= extract_query_into_iter("program.exe query file");
-        let prompt = PromptExtractor::new(StdinServiceMock { is_terminal: true })
-            .extract(args)
-            .expect("Prompt should be ok");
+        let prompt = PromptService::get_with_args(args).expect("Prompt should be ok");
 
         let config = Config::build(prompt);        
         
         assert!(config.is_ok());
-        let config = config.expect("Result should be ok.");
+        let config = config.expect("Config should be ok.");
 
         assert_eq!(config.query, "query");
         assert!(matches!(config.input, Input::Filepath(_)));
@@ -103,26 +99,22 @@ mod tests {
     #[test]
     fn check_insensitive() {
         let args= extract_query_into_iter("program.exe query file -i");
-        let prompt = PromptExtractor::new(StdinServiceMock { is_terminal: true })
-            .extract(args)
-            .expect("Prompt should be ok");
+        let prompt = PromptService::get_with_args(args).expect("Prompt should be ok");
 
         let config = Config::build(prompt);   
         
         assert!(config.is_ok());
-        let config = config.expect("Result should be ok.");
+        let config = config.expect("Config should be ok.");
 
         assert!(config.case_insensitive);
         
         let args= extract_query_into_iter("program.exe query file");
-        let prompt = PromptExtractor::new(StdinServiceMock { is_terminal: true })
-            .extract(args)
-            .expect("Prompt should be ok");
+        let prompt = PromptService::get_with_args(args).expect("Prompt should be ok");
 
         let config = Config::build(prompt);   
         
         assert!(config.is_ok());
-        let config = config.expect("Result should be ok.");
+        let config = config.expect("Config should be ok.");
 
         assert!(!config.case_insensitive);    
     }
