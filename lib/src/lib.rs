@@ -3,12 +3,12 @@ mod config;
 mod search;
 
 use std::{error::Error, fs, io};
-use args_extractor::PromptService;
+use args_extractor::PromptExtractor;
 use config::{Config, Input};
 use search::Search;
 
 pub fn run() -> Result<(), Box<dyn Error>> {
-    let prompt = PromptService::get()?;
+    let prompt = PromptExtractor::extract()?;
     let config = Config::build(prompt)?;
     
     let content: &String = match &config.input {

@@ -56,8 +56,7 @@ impl Config {
 mod tests {
 
     use std::vec::IntoIter;
-
-    use args_extractor::PromptService;
+    use args_extractor::PromptExtractor;
 
     use super::*;
 
@@ -68,14 +67,14 @@ mod tests {
     #[test]
     fn check_bad_format() {
         let args= extract_query_into_iter("program.exe");
-        let prompt = PromptService::get_with_args(args).expect("Prompt should be ok");
+        let prompt = PromptExtractor::extract_from(args).expect("Prompt should be ok");
 
         let config = Config::build(prompt);
         
         assert!(config.is_err());
 
         let args= extract_query_into_iter("program.exe query");
-        let prompt = PromptService::get_with_args(args).expect("Prompt should be ok");
+        let prompt = PromptExtractor::extract_from(args).expect("Prompt should be ok");
 
         let config = Config::build(prompt);
         
@@ -85,7 +84,7 @@ mod tests {
     #[test]
     fn check_query_file() {
         let args= extract_query_into_iter("program.exe query file");
-        let prompt = PromptService::get_with_args(args).expect("Prompt should be ok");
+        let prompt = PromptExtractor::extract_from(args).expect("Prompt should be ok");
 
         let config = Config::build(prompt);        
         
@@ -99,7 +98,7 @@ mod tests {
     #[test]
     fn check_insensitive() {
         let args= extract_query_into_iter("program.exe query file -i");
-        let prompt = PromptService::get_with_args(args).expect("Prompt should be ok");
+        let prompt = PromptExtractor::extract_from(args).expect("Prompt should be ok");
 
         let config = Config::build(prompt);   
         
@@ -109,7 +108,7 @@ mod tests {
         assert!(config.case_insensitive);
         
         let args= extract_query_into_iter("program.exe query file");
-        let prompt = PromptService::get_with_args(args).expect("Prompt should be ok");
+        let prompt = PromptExtractor::extract_from(args).expect("Prompt should be ok");
 
         let config = Config::build(prompt);   
         
