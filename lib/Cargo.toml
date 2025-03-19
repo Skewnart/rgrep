@@ -2,3 +2,6 @@
 name = "lib"
 version = "0.2.0"
 edition = "2024"
+
+[dependencies]
+args-extractor = "0.1.0"

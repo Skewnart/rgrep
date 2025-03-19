@@ -3,8 +3,17 @@
 version = 4
 
 [[package]]
+name = "args-extractor"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1b380815b6bad434ea94067e72bfff7b59c8190129dc7711599ecb56095b6009"
+
+[[package]]
 name = "lib"
 version = "0.2.0"
+dependencies = [
+ "args-extractor",
+]
 
 [[package]]
 name = "main"

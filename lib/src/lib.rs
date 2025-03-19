@@ -1,17 +1,15 @@
 
 mod config;
 mod search;
-mod stdin;
 
-use std::{env, error::Error, fs, io};
+use std::{error::Error, fs, io};
+use args_extractor::PromptExtractor;
 use config::{Config, Input};
 use search::Search;
-use stdin::StdinService;
 
-pub fn run() -> Result<(), Box<dyn Error>> {    
-    let args = env::args();
-
-    let config = Config::build(StdinService::new(), args)?;
+pub fn run() -> Result<(), Box<dyn Error>> {
+    let prompt = PromptExtractor::extract()?;
+    let config = Config::build(prompt)?;
     
     let content: &String = match &config.input {
         Input::Content(_content) => _content,

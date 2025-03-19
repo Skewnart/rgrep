@@ -1,5 +1,5 @@
-use std::{env::{self}, fs::OpenOptions, io::{self, BufRead}};
-use crate::stdin::Terminal;
+use std::env;
+use args_extractor::Prompt;
 
 pub enum Input {
     Filepath(String),
@@ -14,30 +14,33 @@ pub struct Config {
 
 impl Config {
 
-    pub fn build(_terminal_service : impl Terminal, mut args : impl Iterator<Item = String>) -> Result<Self, String> {
-        args.next();
+    pub fn build(prompt: Prompt) -> Result<Self, String> {
 
-        let Some(_query) = args.next() else {
+        let Some(_args) = prompt.arguments else {
             return Err("Query not provided".to_string());
         };
 
-        let _from_pipe = !_terminal_service.is_terminal();
+        let _query = _args[0].clone();
 
-        let _input = if _from_pipe {
-            Input::Content(io::stdin().lock().lines().fold(String::from(""), |acc, line| acc + &line.unwrap() + "\n"))
-        }
-        else if let Some(_filepath) = args.next() {
-            Input::Filepath(_filepath)
-        } else { 
-            return Err("File not provided".to_string());
+        let _input = 
+        match prompt.content_piped {
+            Some(content) => Input::Content(content),
+            None => {
+                match _args.get(1) {
+                    Some(arg) => Input::Filepath(arg.clone()),
+                    None => return Err("File not provided".to_string())
+                }
+            }
         };
 
         let mut _case_insensitive = env::var("CASE_INSENSITIVE").is_ok();
 
-        while let Some(arg) = args.next() {
-            match arg.as_str() {
-                "-i" => { _case_insensitive = true; },
-                _ => ()
+        if let Some(params) = prompt.parameters {
+            for (key, _) in params {
+                match key.as_str() {
+                    "-i" => { _case_insensitive = true; },
+                    _ => ()
+                }
             }
         }
     
@@ -49,86 +52,11 @@ impl Config {
     }
 }
 
-#[derive(Debug)]
-pub struct Parameter {
-    pub name: String,
-    pub arguments: Vec<String>
-}
-
-#[derive(Debug)]
-pub struct Prompt {
-    pub program_name: String,
-    pub content_piped: Option<String>,
-    pub arguments: Option<Vec<String>>,
-    pub parameters: Option<Vec<Parameter>>,
-}
-
-pub struct PromptExtractor<T> where T: Terminal {
-    terminal_service : T
-}
-impl<T> PromptExtractor<T>  where T: Terminal {
-    pub fn new (_terminal_service : T) -> Self {
-        Self {
-            terminal_service : _terminal_service
-        }
-    }
-
-    pub fn extract(self, mut args : impl Iterator<Item = String>) -> Result<Prompt, String> {
-
-        let Some(_program_name) = args.next() else {
-            return Err("Program name was not automatically provided.".to_string());
-        };
-
-        let _from_pipe = !self.terminal_service.is_terminal();
-
-        let _content_piped = if _from_pipe {
-            Some(io::stdin().lock().lines().fold(String::from(""), |acc, line| acc + &line.unwrap() + "\n"))
-        } else {
-            None
-        };
-
-        let mut _arguments: Vec<String> = vec![];
-        let mut _parameters: Vec<Parameter> = vec![];
-
-        let mut current_parameter: Option<Parameter> = None;
-
-        for arg in args {
-            if arg.starts_with("-") {
-                if let Some(parameter) = current_parameter {
-                    _parameters.push(parameter);
-                }
-
-                current_parameter = Some(Parameter {
-                    name: arg,
-                    arguments: Vec::<String>::new()
-                });
-            }
-            else {
-                match current_parameter {
-                    None => { _arguments.push(arg); },
-                    Some(ref mut parameter) => {parameter.arguments.push(arg);}
-                }
-            }
-        }
-
-        if let Some(parameter) = current_parameter {
-            _parameters.push(parameter);
-        }
-
-        Ok(Prompt{
-            program_name: _program_name,
-            content_piped : _content_piped,
-            arguments : if !_arguments.is_empty() { Some(_arguments) } else { None },
-            parameters : if !_parameters.is_empty() { Some(_parameters) } else { None }
-        })
-    }
-}
-
 #[cfg(test)]
 mod tests {
 
     use std::vec::IntoIter;
-    use crate::stdin::StdinServiceMock;
+    use args_extractor::PromptExtractor;
 
     use super::*;
 
@@ -139,12 +67,16 @@ mod tests {
     #[test]
     fn check_bad_format() {
         let args= extract_query_into_iter("program.exe");
-        let config = Config::build(StdinServiceMock { is_terminal: true }, args);
+        let prompt = PromptExtractor::extract_from(args).expect("Prompt should be ok");
+
+        let config = Config::build(prompt);
         
         assert!(config.is_err());
 
         let args= extract_query_into_iter("program.exe query");
-        let config = Config::build(StdinServiceMock { is_terminal: true }, args);
+        let prompt = PromptExtractor::extract_from(args).expect("Prompt should be ok");
+
+        let config = Config::build(prompt);
         
         assert!(config.is_err());
     }
@@ -152,10 +84,12 @@ mod tests {
     #[test]
     fn check_query_file() {
         let args= extract_query_into_iter("program.exe query file");
-        let config = Config::build(StdinServiceMock { is_terminal: true }, args);        
+        let prompt = PromptExtractor::extract_from(args).expect("Prompt should be ok");
+
+        let config = Config::build(prompt);        
         
         assert!(config.is_ok());
-        let config = config.expect("Result should be ok.");
+        let config = config.expect("Config should be ok.");
 
         assert_eq!(config.query, "query");
         assert!(matches!(config.input, Input::Filepath(_)));
@@ -164,27 +98,23 @@ mod tests {
     #[test]
     fn check_insensitive() {
         let args= extract_query_into_iter("program.exe query file -i");
-        let config = Config::build(StdinServiceMock { is_terminal: true }, args);
+        let prompt = PromptExtractor::extract_from(args).expect("Prompt should be ok");
+
+        let config = Config::build(prompt);   
         
         assert!(config.is_ok());
-        let config = config.expect("Result should be ok.");
+        let config = config.expect("Config should be ok.");
 
         assert!(config.case_insensitive);
         
         let args= extract_query_into_iter("program.exe query file");
-        let config = Config::build(StdinServiceMock { is_terminal: true }, args);
+        let prompt = PromptExtractor::extract_from(args).expect("Prompt should be ok");
+
+        let config = Config::build(prompt);   
         
         assert!(config.is_ok());
-        let config = config.expect("Result should be ok.");
+        let config = config.expect("Config should be ok.");
 
         assert!(!config.case_insensitive);    
-    }
-
-    #[test]
-    fn test() {
-        let args= extract_query_into_iter("program.exe query file -i");
-        let config = PromptExtractor::new(StdinServiceMock { is_terminal: true }).extract(args);
-
-        eprintln!("{:?}", config);
     }
 }
