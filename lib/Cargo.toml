@@ -4,4 +4,4 @@ version = "0.2.0"
 edition = "2024"
 
 [dependencies]
-args-extractor = { path = "../../args-extractor" }
+args-extractor = "0.1.0"
